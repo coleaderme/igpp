@@ -23,8 +23,6 @@ it **must** contains this key:value in payload/data
 `'variables': '{"data":{"context":"blended","include_reel":"true","query":"mrbeast","rank_token":"","search_surface":"web_top_search"},"hasQuery":true}',`   
 5. goto https://curlconverter.com, paste it there     
 copy output, paste it in this file `secrets.py`  
-replace 'variables' key with `'variables': '{"id":"5821462185","render_surface":"PROFILE"}',`  
-this returns minimal 1.2Kb json which contains HQ pic.
 6. DO NOT share `secrets.py`   
 
 ## Usage:  
