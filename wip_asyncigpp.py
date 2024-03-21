@@ -260,6 +260,11 @@ async def naim():
 
         print("Saved links.csv to " + FOLDER)
 
+def newFunc() -> None:
+    with open('asd', 'a') as f:
+        
+
+
 
 if __name__ == "__main__":
     asyncio.run(naim())

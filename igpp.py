@@ -93,18 +93,15 @@ def web_profile_info_api(username: str, client: httpx.Client) -> dict or bool:
     print("[+] web_profile_info_api: " + username)
     params = {"username": username}
     r = client.get("https://www.instagram.com/api/v1/users/web_profile_info/", params=params)
-    try:
-        if r.text == "":
-            print(f"[-] web_profile_info_api({username})\nEmpty response, invalid username?: {r.content}")
-            return False
-        if "data" in r.json():
-            # save(f"{folder}/{username}.json", r.content)
-            return r.json()
-        print(f"[-] web_profile_info_api({username})\nInvalid response: {r.content}")
+    # check if it is an html response.
+    # left angle bracket '<' is 60 in bytes
+    if r.content[0] == 60:
+        print(f"[-] web_profile_info_api({username}) Not Exist / Logged out ", r.content[:60])
         return False
-    except Exception as e:
-        print(f"[-] web_profile_info_api({username})\n{username} Not Exist / Logged out", e)
-        return False
+    if r.json().get("data"):
+        return r.json()
+    print(f"[-] web_profile_info_api({username})\n{username} Not Exist / Logged out", e, r.content[:60])
+    return False
 
 
 def user_api(user_id: str, username: str, client: httpx.Client) -> str or bool:
@@ -113,15 +110,11 @@ def user_api(user_id: str, username: str, client: httpx.Client) -> str or bool:
     """
     print("[+] user_api: " + username)
     r = client.get(f"https://www.instagram.com/api/v1/users/{user_id}/info/")
-    try:
-        if r.text == "":
-            print(f"[-] user_api({user_id})\nEmpty response, invalid username?: {r.content}")
-            return False
+    if r.json().get("user"):
         # save(f"{folder}/{username}_ID.json", r.content)
         return r.json()["user"]["hd_profile_pic_url_info"]["url"]
-    except Exception as e:
-        print(f"[-] user_api({user_id},{username})", e)
-        return False
+    print(f"[-] user_api({user_id},{username})", e, r.content[:60])
+    return False
 
 
 def query(query: str, client: httpx.Client) -> dict or bool:
@@ -133,16 +126,14 @@ def query(query: str, client: httpx.Client) -> dict or bool:
     data["variables"] = json.dumps(var_json)
 
     r = client.post("https://www.instagram.com/api/graphql", data=data)
-    try:
-        ret = r.json()
-        if "message" in ret:
-            print("[-] " + ret["message"])
-            return False
-        # save('query.json', content=r.content)
+    ret = r.json()
+    if ret.get("data"):
         return ret["data"]["xdt_api__v1__fbsearch__topsearch_connection"]["users"]
-    except Exception as e:
-        print("[-] error getting response from query:" + query, e, r.content[:60])
+    if ret.get("message"):
+        print("[-] " + ret["message"])
         return False
+    print("[-] error getting response from query:" + query, e, r.content[:60])
+    return False
 
 
 def download(usernames: list, fast: bool = False, no_download: bool = False) -> None:
@@ -154,6 +145,7 @@ def download(usernames: list, fast: bool = False, no_download: bool = False) -> 
                 print(f"{username} is cached...Skipping")
                 continue
             info = web_profile_info_api(username, client)
+            
             if info:
                 user_id = info["data"]["user"]["id"]
                 print(f"[+] User::{username} ID::{user_id}")
@@ -200,13 +192,13 @@ def search(ig_queries: list[str], count: int, fast: bool = False, no_download: b
                     users = users[:count]
                 for u in users:
                     name = u["user"]["username"]
-                    print(name)
+                    # print(name)
                     usernames.append(name)
         # downloads all usernames[..] got from Search()
         download(usernames, fast, no_download)
 
 
-def main():
+def main() -> None:
     print(LOGO)
     parser = argparse.ArgumentParser(description="Instagram Profile Picture DL")
     parser.add_argument("-s", "--search", action="store_true", help="Enable search mode")
@@ -220,6 +212,7 @@ def main():
         count = 10
     if args.search and args.username:
         search(args.username, count, args.fast, args.no_download)
+        return
     if args.username:
         download(args.username, args.fast, args.no_download)
 
