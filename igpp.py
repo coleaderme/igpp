@@ -126,6 +126,10 @@ def query(query: str, client: httpx.Client) -> dict or bool:
     data["variables"] = json.dumps(var_json)
 
     r = client.post("https://www.instagram.com/api/graphql", data=data)
+    if r.status_code != 200:
+        print("[-] Bad request: ", r.content[:60])
+        return False
+    
     ret = r.json()
     if ret.get("data"):
         return ret["data"]["xdt_api__v1__fbsearch__topsearch_connection"]["users"]
@@ -164,7 +168,7 @@ def download(usernames: list, fast: bool = False, no_download: bool = False) -> 
                     continue
 
                 # ELSE Get highest quality available.
-                print("[+] Getting HQ..")
+                # print("[+] Getting HQ..")
                 url = user_api(user_id, username, client)
                 if url:
                     cur.execute(
@@ -183,7 +187,6 @@ def search(ig_queries: list[str], count: int, fast: bool = False, no_download: b
     usernames = []  # BIG BIG usernames list
     with httpx.Client(cookies=cookies, headers=headers, timeout=60) as client:
         for ig_query in ig_queries:
-            print("=" * 46)
             print(f"[+] Searching {ig_query}..")
             print("=" * 46)
             users = query(ig_query, client)
