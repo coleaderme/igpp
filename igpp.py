@@ -129,7 +129,7 @@ def query(query: str, client: httpx.Client) -> dict or bool:
     if r.status_code != 200:
         print("[-] Bad request: ", r.content[:60])
         return False
-    
+
     ret = r.json()
     if ret.get("data"):
         return ret["data"]["xdt_api__v1__fbsearch__topsearch_connection"]["users"]
@@ -149,7 +149,7 @@ def download(usernames: list, fast: bool = False, no_download: bool = False) -> 
                 print(f"{username} is cached...Skipping")
                 continue
             info = web_profile_info_api(username, client)
-            
+
             if info:
                 user_id = info["data"]["user"]["id"]
                 print(f"[+] User::{username} ID::{user_id}")
