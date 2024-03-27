@@ -10,8 +10,8 @@
   still better than Instagram's default 150x150 `(-_-)`   
 
 ## Requirements:  
-`pip install httpx`  
-`pip install browser_cookie3`  
+`pip install httpx[http2]`  
+`pip install browser_cookie3`  # Optional  
 
 ## Gettings Started:  
 0. Login to instagram.com web.  

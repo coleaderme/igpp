@@ -142,7 +142,7 @@ def query(query: str, client: httpx.Client) -> dict or bool:
 
 def download(usernames: list, fast: bool = False, no_download: bool = False) -> None:
     print("Getting profile info..")
-    with httpx.Client(cookies=cookies, headers=headers, timeout=60) as client, sqlite3.connect("database/igpp.db") as conn:
+    with httpx.Client(cookies=cookies, headers=headers, timeout=10) as client, sqlite3.connect("database/igpp.db") as conn:
         cur = conn.cursor()
         for username in usernames:
             if is_cached(username, conn):
@@ -185,7 +185,7 @@ def download(usernames: list, fast: bool = False, no_download: bool = False) -> 
 
 def search(ig_queries: list[str], count: int, fast: bool = False, no_download: bool = False) -> None:
     usernames = []  # BIG BIG usernames list
-    with httpx.Client(cookies=cookies, headers=headers, timeout=60) as client:
+    with httpx.Client(cookies=cookies, headers=headers, timeout=10) as client:
         for ig_query in ig_queries:
             print(f"[+] Searching {ig_query}..")
             print("=" * 46)
