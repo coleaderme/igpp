@@ -56,8 +56,8 @@ def save(path: str, content: bytes) -> None:
     try:
         with open(path, "wb") as f:
             f.write(content)
-    except Exception as e:
-        print(f"[-] Failed to save to {path}\n", e)
+    except Exception as save_err:
+        print(f"[-] Failed to save to {path}\n", save_err)
 
 
 def save_csv(data: list[str]) -> None:
@@ -83,8 +83,8 @@ def user_info_graphql(user_id: str, username: str, client: httpx.Client) -> str 
         return client.post(url="https://www.instagram.com/api/graphql", headers=headers, data=data).json()["data"]["user"][
             "hd_profile_pic_url_info"
         ]["url"]
-    except Exception as e:
-        print(f"[-] user_info_graphql({user_id}, {username}, client)", e)
+    except Exception as graphql_err:
+        print(f"[-] user_info_graphql({user_id}, {username}, client)", graphql_err)
         return False
 
 
@@ -100,7 +100,7 @@ def web_profile_info_api(username: str, client: httpx.Client) -> dict or bool:
         return False
     if r.json().get("data"):
         return r.json()
-    print(f"[-] web_profile_info_api({username})\n{username} Not Exist / Logged out", e, r.content[:60])
+    print(f"[-] web_profile_info_api({username})\n{username} Not Exist / Logged out", r.content[:60])
     return False
 
 
@@ -113,7 +113,7 @@ def user_api(user_id: str, username: str, client: httpx.Client) -> str or bool:
     if r.json().get("user"):
         # save(f"{folder}/{username}_ID.json", r.content)
         return r.json()["user"]["hd_profile_pic_url_info"]["url"]
-    print(f"[-] user_api({user_id},{username})", e, r.content[:60])
+    print(f"[-] user_api({user_id},{username})", r.content[:60])
     return False
 
 
@@ -136,7 +136,7 @@ def query(query: str, client: httpx.Client) -> dict or bool:
     if ret.get("message"):
         print("[-] " + ret["message"])
         return False
-    print("[-] error getting response from query:" + query, e, r.content[:60])
+    print("[-] error getting response from query:" + query, r.content[:60])
     return False
 
 
