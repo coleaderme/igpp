@@ -49,7 +49,7 @@ def create_db():
 
 def is_cached(username: str, conn: sqlite3.Connection) -> tuple or None:
     # trailing comma in sql query is important!
-    return conn.cursor().execute("SELECT * FROM ig WHERE user=?;", (username,)).fetchone()
+    return conn.cursor().execute("SELECT user FROM ig WHERE user=?;", (username,)).fetchone()
 
 
 def sql_insert(username: str, user_id: str, url: str, conn: sqlite3.Connection) -> None:
@@ -161,48 +161,53 @@ def query(query: str, client: httpx.Client) -> dict or bool:
     return False
 
 
-def download(usernames: list, fast: bool = False, no_download: bool = False, update: bool = False) -> None:
+def nodownload(usernames: list, fast: bool = False) -> None:
     print("[+] Getting profile info..")
     with httpx.Client(cookies=cookies, headers=headers, timeout=10) as client, sqlite3.connect("database/igpp.db") as conn:
         for username in usernames:
             if is_cached(username, conn):
-                print(f"{username} is cached", end = '')
-                if update:
-                    print(f' updating..')
-                else:
-                    print('..skipped')
-                    continue
+                print(f"[/] {username} is cached..skipping")
+                continue
             info = web_profile_info_api(username, client)
-
             if info:
                 user_id = info["data"]["user"]["id"]
                 print(f"[+] {username}::{user_id}")
                 if fast:
                     url = info["data"]["user"]["profile_pic_url_hd"]  # may vary (320px | 150px)
-                    if update:
-                        sql_update(username, url, conn)
-                    else:
-                        sql_insert(username, user_id, url, conn)
-
-                    if not no_download:
-                        save(f"{folder}/{username}_320p.jpg", client.get(url).content)
+                    sql_insert(username, user_id, url, conn)
                     continue
-
-
                 # ELSE Get highest quality available.
                 # print("[+] Getting HQ..")
                 url = user_api(user_id, username, client)
                 if url:
-                    if update:
-                        sql_update(username, url, conn)
-                    else:
-                        sql_insert(username, user_id, url, conn)
-
-                    if not no_download:
-                        save(f"{folder}/{username}.jpg", client.get(url).content)
+                     sql_insert(username, user_id, url, conn)
 
 
-def search(ig_queries: list[str], count: int, fast: bool = False, no_download: bool = False, update: bool = False) -> None:
+def download(usernames: list, fast: bool = False) -> None:
+    print("[+] Getting profile info..")
+    with httpx.Client(cookies=cookies, headers=headers, timeout=10) as client, sqlite3.connect("database/igpp.db") as conn:
+        for username in usernames:
+            if is_cached(username, conn):
+                print(f"{username} is cached..skipping")
+                continue
+            info = web_profile_info_api(username, client)
+            if info:
+                user_id = info["data"]["user"]["id"]
+                print(f"[+] {username}::{user_id}")
+                if fast:
+                    url = info["data"]["user"]["profile_pic_url_hd"]  # may vary (320px | 150px)
+                    sql_insert(username, user_id, url, conn)
+                    save(f"{folder}/{username}_320p.jpg", client.get(url).content)
+                    continue
+                # ELSE Get highest quality available.
+                # print("[+] Getting HQ..")
+                url = user_api(user_id, username, client)
+                if url:
+                    sql_insert(username, user_id, url, conn)
+                    save(f"{folder}/{username}.jpg", client.get(url).content)
+
+
+def search(ig_queries: list[str], count: int, fast: bool = False, no_download: bool = False) -> None:
     usernames = []  # BIG BIG usernames list
     with httpx.Client(cookies=cookies, headers=headers, timeout=10) as client:
         for ig_query in ig_queries:
@@ -219,7 +224,10 @@ def search(ig_queries: list[str], count: int, fast: bool = False, no_download: b
         # downloads all usernames[..] got from Search()
         if not usernames:
             print(f"[-] failed to get usernames @search({ig_query})")
-        download(usernames, fast, no_download, update)
+        if no_download:
+            nodownload(usernames, fast)
+        else:
+            download(usernames, fast)
 
 
 def main() -> None:
@@ -228,19 +236,17 @@ def main() -> None:
     parser.add_argument("-s", "--search", action="store_true", help="Enable search mode")
     parser.add_argument("-c", "--count", type=int, help="show first N search results upto 50 (valid in search mode)")
     parser.add_argument("-f", "--fast", action="store_true", help="Use fast mode, skips extra request")
-    parser.add_argument("-n", "--no-download", action="store_true", help="skips image download")
-    parser.add_argument("-u", "--update", action="store_true", help="update database entry")
+    parser.add_argument("-n", "--no-download", action="store_true", help="skips photo download")
     parser.add_argument("-i", "--username", nargs="+", help="Input(s) separated by spaces")
     args = parser.parse_args()
     count = args.count
-
     if count is None:
-        count = 10
+        count = 5
     if args.search and args.username:
-        search(args.username, count, args.fast, args.no_download, args.update)
+        search(args.username, count, args.fast, args.no_download)
         return
     # direct download
-    download(args.username, args.fast, args.no_download, args.update)
+    download(args.username, args.fast)
 
 
 if __name__ == "__main__":
