@@ -32,6 +32,9 @@ folder = "downloads_ig"  # default Folder where downloads are saved
 
 
 def create_db():
+    """
+    create db if not exist
+    """
     try:
         with open("database/igpp.db", "rb") as db:  # noqa
             print("[+] DB exists")
@@ -64,6 +67,7 @@ def sql_insert(username: str, user_id: str, url: str, conn: sqlite3.Connection) 
 
 
 def sql_update(username: str, url: str, conn: sqlite3.Connection) -> None:
+    ''' TODO: how to append to existing data?  '''
     conn.cursor().execute(
         "UPDATE ig SET hq = (?) WHERE user = (?)",
         (
@@ -89,10 +93,11 @@ def save_csv(data: list[str]) -> None:
                 f.write(d + "\n")
 
 
-def user_info_graphql(user_id: str, username: str, client: httpx.Client) -> str or bool:
-    """return HQ pp url OR False
+def user_info_graphql(user_id: str, username: str, client: httpx.Client) -> str or None:
+    """
+    return HQ pp url OR False
     this response is just 1.2Kb
-    compared to user_info_api's resp size.
+    tiny, compared to user_info_api's resp size.
     """
     headers["referer"] = "https://www.instagram.com/" + username
     data = {"variables": '{"id":"xxxxx","render_surface":"PROFILE"}'}
@@ -106,28 +111,29 @@ def user_info_graphql(user_id: str, username: str, client: httpx.Client) -> str 
         ]["url"]
     except Exception as graphql_err:
         print(f"[-] user_info_graphql({user_id}, {username}, client)", graphql_err)
-        return False
+        return
 
 
-def web_profile_info_api(username: str, client: httpx.Client) -> dict or bool:
+def web_profile_info_api(username: str, client: httpx.Client) -> dict or None:
     """get user id from username"""
     print("[+] web_profile_info_api: " + username)
     params = {"username": username}
     r = client.get("https://www.instagram.com/api/v1/users/web_profile_info/", params=params)
-    # check if it is an html response.
-    # left angle bracket '<' is 60 in bytes
+    # check if it is an html response, checking first byte of response.
+    # left angle bracket '<' is #60 ascii chr.
     if r.content[0] == 60:
         print(f"[-] web_profile_info_api({username}) Not Exist / Logged out ", r.content[:60])
-        return False
+        return
     if r.json().get("data"):
         return r.json()
-    print(f"[-] web_profile_info_api({username})\n{username} Not Exist / Logged out", r.content[:60])
-    return False
+    print(f"[-] web_profile_info_api({username}) Not Exist / Logged out", r.content[:60])
+    return
 
 
-def user_api(user_id: str, username: str, client: httpx.Client) -> str or bool:
-    """gets bunch of info {dict} about user
-    but decided to return HQ url only
+def user_api(user_id: str, username: str, client: httpx.Client) -> str or None:
+    """
+    gets bunch of info {dict} about user
+    we need HQ url only
     """
     print("[+] user_api: " + username)
     r = client.get(f"https://www.instagram.com/api/v1/users/{user_id}/info/")
@@ -135,10 +141,10 @@ def user_api(user_id: str, username: str, client: httpx.Client) -> str or bool:
         # save(f"{folder}/{username}_ID.json", r.content)
         return r.json()["user"]["hd_profile_pic_url_info"]["url"]
     print(f"[-] user_api({user_id},{username})", r.content[:60])
-    return False
+    return
 
 
-def query(query: str, client: httpx.Client) -> dict or bool:
+def query(query: str, client: httpx.Client) -> dict or None:
     # loads values of key 'variables' >> loads json string to dict.
     var_json = json.loads(data["variables"])
     # update value of key 'query'
@@ -149,16 +155,15 @@ def query(query: str, client: httpx.Client) -> dict or bool:
     r = client.post("https://www.instagram.com/api/graphql", data=data)
     if r.status_code != 200:
         print("[-] Bad request: ", r.content[:60])
-        return False
-
+        return
     ret = r.json()
     if ret.get("data"):
         return ret["data"]["xdt_api__v1__fbsearch__topsearch_connection"]["users"]
     if ret.get("message"):
         print("[-] " + ret["message"])
-        return False
+        return
     print("[-] error getting response from query:" + query, r.content[:60])
-    return False
+    return
 
 
 def nodownload(usernames: list, fast: bool = False) -> None:
