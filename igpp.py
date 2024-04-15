@@ -67,7 +67,7 @@ def sql_insert(username: str, user_id: str, url: str, conn: sqlite3.Connection) 
 
 
 def sql_update(username: str, url: str, conn: sqlite3.Connection) -> None:
-    ''' TODO: how to append to existing data?  '''
+    """TODO: how to append to existing data?"""
     conn.cursor().execute(
         "UPDATE ig SET hq = (?) WHERE user = (?)",
         (
@@ -109,8 +109,8 @@ def user_info_graphql(user_id: str, username: str, client: httpx.Client) -> str 
         return client.post(url="https://www.instagram.com/api/graphql", headers=headers, data=data).json()["data"]["user"][
             "hd_profile_pic_url_info"
         ]["url"]
-    except Exception as graphql_err:
-        print(f"[-] user_info_graphql({user_id}, {username}, client)", graphql_err)
+    except:  # noqa
+        print(f"[-] user_info_graphql({user_id}, {username}, client)")
         return
 
 
@@ -119,15 +119,11 @@ def web_profile_info_api(username: str, client: httpx.Client) -> dict or None:
     print("[+] web_profile_info_api: " + username)
     params = {"username": username}
     r = client.get("https://www.instagram.com/api/v1/users/web_profile_info/", params=params)
-    # check if it is an html response, checking first byte of response.
-    # left angle bracket '<' is #60 ascii chr.
-    if r.content[0] == 60:
-        print(f"[-] web_profile_info_api({username}) Not Exist / Logged out ", r.content[:60])
-        return
-    if r.json().get("data"):
+    try:
         return r.json()
-    print(f"[-] web_profile_info_api({username}) Not Exist / Logged out", r.content[:60])
-    return
+    except:  # noqa
+        print(f"[-] web_profile_info_api({username}) Not Exist / Logged out::", r.content[:60])
+        return
 
 
 def user_api(user_id: str, username: str, client: httpx.Client) -> str or None:
@@ -140,7 +136,7 @@ def user_api(user_id: str, username: str, client: httpx.Client) -> str or None:
     if r.json().get("user"):
         # save(f"{folder}/{username}_ID.json", r.content)
         return r.json()["user"]["hd_profile_pic_url_info"]["url"]
-    print(f"[-] user_api({user_id},{username})", r.content[:60])
+    print(f"[-] user_api({user_id},{username})::", r.content[:60])
     return
 
 
@@ -156,14 +152,11 @@ def query(query: str, client: httpx.Client) -> dict or None:
     if r.status_code != 200:
         print("[-] Bad request: ", r.content[:60])
         return
-    ret = r.json()
-    if ret.get("data"):
-        return ret["data"]["xdt_api__v1__fbsearch__topsearch_connection"]["users"]
-    if ret.get("message"):
-        print("[-] " + ret["message"])
+    try:
+        return r.json()["data"]["xdt_api__v1__fbsearch__topsearch_connection"]["users"]
+    except:  # noqa
+        print(f"[-] query({query}) Logged Out::", r.content[:60])
         return
-    print("[-] error getting response from query:" + query, r.content[:60])
-    return
 
 
 def nodownload(usernames: list, fast: bool = False) -> None:
@@ -185,7 +178,7 @@ def nodownload(usernames: list, fast: bool = False) -> None:
                 # print("[+] Getting HQ..")
                 url = user_api(user_id, username, client)
                 if url:
-                     sql_insert(username, user_id, url, conn)
+                    sql_insert(username, user_id, url, conn)
 
 
 def download(usernames: list, fast: bool = False) -> None:
