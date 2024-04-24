@@ -5,6 +5,7 @@ import secrets
 import sqlite3
 import json
 import argparse
+# import browser_cookie3
 
 # textfancy: https://textfancy.com/text-art/
 LOGO = """
