@@ -118,19 +118,12 @@ def read_from_file():
         f.write(f"cookies={c}\nheaders={h}\ndata={d}")
     print("[+] Saved cookies to file")
 
-
-## json version
-# print('headers:')
-# print(json.dumps(h))
-# print('cookies:')
-# print(json.dumps(c))
-
 ## prints all
 print(h)
 print(c)
 print(d)
 
 ## saves to file
-with open("secrets.py", "w") as f:
+with open("secrets_session.py", "w") as f:
     f.write(f"cookies={c}\nheaders={h}\ndata={d}")
 print("\n[+] Saved cookies to file")

@@ -22,19 +22,20 @@
 it **must** contains this key:value in payload/data  
 `'variables': '{"data":{"context":"blended","include_reel":"true","query":"mrbeast","rank_token":"","search_surface":"web_top_search"},"hasQuery":true}',`   
 5. goto https://curlconverter.com, paste it there     
-copy output, paste it in this file `secrets.py`  
-6. DO NOT share `secrets.py`   
+copy output, paste it in this file `secrets_session.py`  
+6. DO NOT share `secrets_session.py`   
+Note: this `secrets_session.py` seems to be stop working after sometime (days/hours),  
+  you may have to redo this everytime your session expires / logs out.  
+
 
 ## Usage:  
   `python igpp.py -i apple android instagram mrbeast`   
 **Fast mode:**   
-  `python igpp.py --fast -i apple instagram mrbeast`  
-**Search mode:** search and show first 10, default: 5  
-  `python igpp.py --search --count 10 -i apple instagram mrbeast`  
-**Search mode + Fast mode:** search and show first 10 (upto ~50 results)  
-  `python igpp.py --search --count 10 --fast -i apple instagram mrbeast`  
-  *same result with*  
-  `python igpp.py -s -c 10 -f -i apple instagram mrbeast`  
+  `python igpp.py -f -i apple instagram mrbeast`  
+**Search mode:** search and show count=10, default: 5  
+  `python igpp.py -s -c 10 -i apple instagram mrbeast`  
+**No Download:**  
+  `python igpp.py -s -c 10 -n -i apple instagram mrbeast`  
 **help:**  
   `python igpp.py --help/-h`  
 
@@ -42,6 +43,5 @@ copy output, paste it in this file `secrets.py`
   what a timing!   
 
 ## Todo:  
-- make headers/cookies process simple.  
-- utilize offline cached jsons. 
-- 
+- make headers/cookies process simple:  
+	

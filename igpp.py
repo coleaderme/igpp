@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import httpx
-import secrets
+import secrets_session
 import sqlite3
 import json
 import argparse
@@ -25,9 +25,9 @@ License: MIT
 """
 
 # cookies = browser_cookie3.chromium(domain_name="instagram.com")  # cookies from browser!
-cookies = secrets.cookies
-headers = secrets.headers
-data = secrets.data
+cookies = secrets_session.cookies
+headers = secrets_session.headers
+data = secrets_session.data
 
 folder = "downloads_ig"  # default Folder where downloads are saved
 
@@ -94,29 +94,8 @@ def save_csv(data: list[str]) -> None:
                 f.write(d + "\n")
 
 
-def user_info_graphql(user_id: str, username: str, client: httpx.Client) -> str or None:
-    """
-    return HQ pp url OR False
-    this response is just 1.2Kb
-    tiny, compared to user_info_api's resp size.
-    """
-    headers["referer"] = "https://www.instagram.com/" + username
-    data = {"variables": '{"id":"xxxxx","render_surface":"PROFILE"}'}
-    var_json = json.loads(data["variables"])
-    var_json["id"] = user_id
-    data["variables"] = json.dumps(var_json)
-    # eg, apple looks like: 'variables': '{"id":"5821462185","render_surface":"PROFILE"}',
-    try:
-        return client.post(url="https://www.instagram.com/api/graphql", headers=headers, data=data).json()["data"]["user"][
-            "hd_profile_pic_url_info"
-        ]["url"]
-    except:  # noqa
-        print(f"[-] user_info_graphql({user_id}, {username}, client)")
-        return
-
-
+# user_id from username
 def web_profile_info_api(username: str, client: httpx.Client) -> dict or None:
-    """get user id from username"""
     print("[+] web_profile_info_api: " + username)
     params = {"username": username}
     r = client.get("https://www.instagram.com/api/v1/users/web_profile_info/", params=params)
@@ -127,26 +106,44 @@ def web_profile_info_api(username: str, client: httpx.Client) -> dict or None:
         return
 
 
+# method 1 of getting hq pp
 def user_api(user_id: str, username: str, client: httpx.Client) -> str or None:
     """
     gets bunch of info {dict} about user
-    we need HQ url only
+    we need hq pp url only
     """
     print("[+] user_api: " + username)
-    r = client.get(f"https://www.instagram.com/api/v1/users/{user_id}/info/")
-    if r.json().get("user"):
-        # save(f"{folder}/{username}_ID.json", r.content)
-        return r.json()["user"]["hd_profile_pic_url_info"]["url"]
-    print(f"[-] user_api({user_id},{username})::", r.content[:60])
+    try:
+        return client.get(f"https://www.instagram.com/api/v1/users/{user_id}/info/").json()["user"]["hd_profile_pic_url_info"]["url"]
+    except:  #noqa
+        print(f"[-] user_api({user_id},{username})::", r.content[:60])
     return
 
 
-def query(query: str, client: httpx.Client) -> dict or None:
-    # loads values of key 'variables' >> loads json string to dict.
+# method 2 of getting hq pp: relies on graphql
+def user_info_graphql(user_id: str, username: str, client: httpx.Client) -> str or None:
+    """
+    return hq pp url OR None
+    this response is just 1.2Kb
+    tiny, compared to user_info_api 9Kb.
+    """
+    headers["referer"] = "https://www.instagram.com/" + username
+    data = {"variables": '{"id":"'+user_id+'","render_surface":"PROFILE"}'}
+    # eg, apple looks like: 'variables': '{"id":"5821462185","render_surface":"PROFILE"}',
+    try:
+        return client.post(url="https://www.instagram.com/api/graphql", headers=headers, data=data).json()["data"]["user"]["hd_profile_pic_url_info"]["url"]
+    except: # noqa
+        print(f"[-] user_info_graphql({user_id}, {username}, client)")
+        return
+
+
+def query(query_term: str, client: httpx.Client) -> dict or None:
+    # 1. access value of key 'variables', loadS json String to dict.
+    # 2. update value of key 'query'
+    # 3. put dict back to json string.
+
     var_json = json.loads(data["variables"])
-    # update value of key 'query'
-    var_json["data"]["query"] = query
-    # put dict back to json string.
+    var_json["data"]["query"] = query_term
     data["variables"] = json.dumps(var_json)
 
     r = client.post("https://www.instagram.com/api/graphql", data=data)
@@ -199,13 +196,13 @@ def download(usernames: list, fast: bool = False) -> None:
                     save(f"{folder}/{username}_320p.jpg", client.get(url).content)
                     continue
                 # ELSE Get highest quality available.
-                # print("[+] Getting HQ..")
                 url = user_api(user_id, username, client)
                 if url:
                     sql_insert(username, user_id, url, conn)
                     save(f"{folder}/{username}.jpg", client.get(url).content)
 
 
+# searching users relies on graphql, means it will break often.
 def search(ig_queries: list[str], count: int, fast: bool = False, no_download: bool = False) -> None:
     usernames = []  # BIG BIG usernames list
     with httpx.Client(cookies=cookies, headers=headers, timeout=10) as client:
