@@ -2,10 +2,9 @@
 
 ## Features  
 - **lite and easy to use** keeping it simple.  
-- **caching** skips already downloaded json/img.  
-- **synchronous** slow enough, so you won't get blocked.  
+- **caching** skips already downloaded photos.  
 - **public/private** both are supported.  
-- **Fast mode** (320x320px) will speed up your research,  
+- **Fast mode** (320px) will speed up your research,  
   (this skips 2nd GET request) thus, saves time  
   still better than Instagram's default 150x150 `(-_-)`   
 
@@ -13,7 +12,7 @@
 `pip install httpx[http2]`  
 `pip install browser_cookie3`  # Optional  
 
-## Gettings Started:  
+## Gettings Started (Setup):  
 0. Login to instagram.com web.  
 1. open Developer tools, goto Network Tab (reload [ctrl+r] to capture traffic)  
 2. search for username in IG's search box  
