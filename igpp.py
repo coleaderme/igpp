@@ -54,7 +54,7 @@ def save_csv(data: list[str]) -> None:
 
 # user_id from username
 def web_profile_info_api(username: str, client: httpx.Client) -> dict:
-    print("[+] web_profile_info_api: " + username)
+    # print("[+] web_profile_info_api: " + username)
     params = {"username": username}
     r = client.get("https://www.instagram.com/api/v1/users/web_profile_info/", params=params)
     try:
@@ -70,7 +70,7 @@ def user_api(user_id: str, username: str, client: httpx.Client) -> str:
     gets bunch of info {dict} about user
     we need hq pp url only
     """
-    print("[+] user_api: " + username)
+    # print("[+] user_api: " + username)
     try:
         return client.get(f"https://www.instagram.com/api/v1/users/{user_id}/info/").json()["user"]["hd_profile_pic_url_info"]["url"]
     except:  # noqa
@@ -114,6 +114,8 @@ def query(query_term: str, client: httpx.Client) -> dict:
 
 def download(usernames: list[str], is_fast: bool = False) -> None:
     with httpx.Client(cookies=cookies, headers=headers, timeout=10) as client:
+        ig_sso_users = client.post('https://www.instagram.com/api/v1/web/fxcal/ig_sso_users/', cookies=cookies, headers=headers)
+        print(f"ig_sso_users:  {ig_sso_users.content}")
         for username in usernames:
             info = web_profile_info_api(username, client)
             if info:
@@ -121,7 +123,7 @@ def download(usernames: list[str], is_fast: bool = False) -> None:
                     print(f"[+] User not exist: {username}")
                     continue  # skip
                 user_id = info["data"]["user"]["id"]
-                print(f"[+] {username}::{user_id}")
+                print(f"[+] {username:<20}::{user_id:>12}")
                 if is_fast:
                     url = info["data"]["user"]["profile_pic_url_hd"]  # may vary (320px | 150px)
                     save(f"{folder}/{username}_320p.jpg", client.get(url).content)
@@ -137,8 +139,8 @@ def search(ig_queries: list[str], count: int, is_fast: bool = False) -> None:
     usernames = []  # BIG BIG usernames list
     with httpx.Client(cookies=cookies, headers=headers, timeout=10) as client:
         for ig_query in ig_queries:
-            print(f"[+] Searching {ig_query}..")
-            print("=" * 40)
+            print(f"[+] Searching for `{ig_query}` please wait..")
+            print("===============================================")
             users = query(ig_query, client)
             if users:
                 if len(users) > count:
