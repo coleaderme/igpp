@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 
 import argparse
-import glob
+from re import match
+import secrets_session
 import httpx
 import json
-import re
-import secrets_session
 # import browser_cookie3
 
 # textfancy: https://textfancy.com/text-art/
@@ -32,18 +31,10 @@ data = secrets_session.data
 
 folder = "downloads_ig"  # default Folder where downloads are saved
 
+
 def valid_instagram_username(username: str) -> bool:
-    pattern = r'^(?!.*\.\.)(?!.*\.$)(?!.*\.\d$)(?!.*\.$)[^\W][\w.]{1,29}$'
-    return bool(re.match(pattern, username))
-
-
-def cached(username: str) -> bool:
-    cached_users = glob.glob(f"{folder}/*.jpg")
-    # print('Inventory: ', cached_users)
-    for user in cached_users:
-        if f'{folder}/{username}.jpg' == user:
-            return True
-    return False
+    pattern = r"^(?!.*\.\.)(?!.*\.$)(?!.*\.\d$)(?!.*\.$)[^\W][\w.]{1,29}$"
+    return bool(match(pattern, username))
 
 
 def save(path: str, content: bytes) -> None:
@@ -83,7 +74,7 @@ def user_api(user_id: str, username: str, client: httpx.Client) -> str or None:
     print("[+] user_api: " + username)
     try:
         return client.get(f"https://www.instagram.com/api/v1/users/{user_id}/info/").json()["user"]["hd_profile_pic_url_info"]["url"]
-    except:  #noqa
+    except:  # noqa
         print(f"[-] user_api({user_id},{username})::", r.content[:60])
     return
 
@@ -96,11 +87,11 @@ def user_info_graphql(user_id: str, username: str, client: httpx.Client) -> str 
     tiny, compared to user_info_api 9Kb.
     """
     headers["referer"] = "https://www.instagram.com/" + username
-    data = {"variables": '{"id":"'+user_id+'","render_surface":"PROFILE"}'}
+    data = {"variables": '{"id":"' + user_id + '","render_surface":"PROFILE"}'}
     # eg, apple looks like: 'variables': '{"id":"5821462185","render_surface":"PROFILE"}',
     try:
         return client.post(url="https://www.instagram.com/api/graphql", headers=headers, data=data).json()["data"]["user"]["hd_profile_pic_url_info"]["url"]
-    except: # noqa
+    except:  # noqa
         print(f"[-] user_info_graphql({user_id}, {username}, client)")
         return
 
@@ -122,21 +113,18 @@ def query(query_term: str, client: httpx.Client) -> dict or None:
         return
 
 
-def download(usernames: list, is_fast: bool = False) -> None:
-    print("[+] Getting profile info..")
+def download(usernames: list[str], is_fast: bool = False, valid_input: bool = False) -> None:
     with httpx.Client(cookies=cookies, headers=headers, timeout=10) as client:
         for username in usernames:
-            if not valid_instagram_username(username):
-                print(f'[-] Invalid username: {username}')
-                continue # skip
-            if cached(username):
-                print(f"{username} is cached..skipping")
-                continue
+            if valid_input:
+                if not valid_instagram_username(username):
+                    print(f"[-] Invalid username: {username}\n\tplease check username.\n\tmaybe replace - with _ ?\n")
+                    return  # close here.
             info = web_profile_info_api(username, client)
             if info:
                 if info["data"]["user"] is None:
-                    print(f'[+] User not exist: {username}')
-                    continue # skip
+                    print(f"[+] User not exist: {username}")
+                    continue  # skip
                 user_id = info["data"]["user"]["id"]
                 print(f"[+] {username}::{user_id}")
                 if is_fast:
@@ -168,7 +156,7 @@ def search(ig_queries: list[str], count: int, is_fast: bool = False) -> None:
         if not usernames:
             print(f"[-] failed to get usernames @search({ig_query})")
         else:
-            download(usernames, is_fast)
+            download(usernames, is_fast, valid_input=False)
 
 
 def main() -> None:
@@ -186,7 +174,7 @@ def main() -> None:
         search(args.username, count, args.fast)
         return
     # direct download
-    download(args.username, args.fast)
+    download(args.username, args.fast, valid_input=True)
 
 
 if __name__ == "__main__":
