@@ -1,0 +1,18 @@
+# Files to exclude from repo
+/*
+*.txt
+*.jpg
+*.py
+*.db
+# Files to include in repo
+!sample.txt
+!.gitignore
+!__init__.py
+!curl_to_secrets.sh
+!database
+!downloads_ig
+!igpp.py
+!LICENSE
+!README.md
+!requirements.txt
+!utils
