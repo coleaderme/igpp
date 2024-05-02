@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
-import argparse
-from re import match
-import secrets_session
 import httpx
+import argparse
+import secrets_session
 import json
 # import browser_cookie3
 
@@ -32,9 +31,9 @@ data = secrets_session.data
 folder = "downloads_ig"  # default Folder where downloads are saved
 
 
-def valid_instagram_username(username: str) -> bool:
-    pattern = r"^(?!.*\.\.)(?!.*\.$)(?!.*\.\d$)(?!.*\.$)[^\W][\w.]{1,29}$"
-    return bool(match(pattern, username))
+# def valid_instagram_username(username: str) -> bool:
+#     pattern = r"^(?!.*\.\.)(?!.*\.$)(?!.*\.\d$)(?!.*\.$)[^\W][\w.]{1,29}$"
+#     return bool(re.match(pattern, username))
 
 
 def save(path: str, content: bytes) -> None:
@@ -109,17 +108,13 @@ def query(query_term: str, client: httpx.Client) -> dict:
     try:
         return r.json()["data"]["xdt_api__v1__fbsearch__topsearch_connection"]["users"]
     except:  # noqa
-        print(f"[-] query({query}) Logged Out::", r.content[:60])
+        print(f"[-] query({query}) Logged Out")
         return {}
 
 
-def download(usernames: list[str], is_fast: bool = False, valid_input: bool = False) -> None:
+def download(usernames: list[str], is_fast: bool = False) -> None:
     with httpx.Client(cookies=cookies, headers=headers, timeout=10) as client:
         for username in usernames:
-            if valid_input:
-                if not valid_instagram_username(username):
-                    print(f"[-] Invalid username: {username}\n\tplease check username.\n\tmaybe replace - with _ ?\n")
-                    return  # close here.
             info = web_profile_info_api(username, client)
             if info:
                 if info["data"]["user"] is None:
@@ -156,7 +151,7 @@ def search(ig_queries: list[str], count: int, is_fast: bool = False) -> None:
         if not usernames:
             print(f"[-] failed to get usernames @search({ig_query})")
         else:
-            download(usernames, is_fast, valid_input=False)
+            download(usernames, is_fast)
 
 
 def main() -> None:
@@ -174,7 +169,7 @@ def main() -> None:
         search(args.username, count, args.fast)
         return
     # direct download
-    download(args.username, args.fast, valid_input=True)
+    download(args.username, args.fast)
 
 
 if __name__ == "__main__":
