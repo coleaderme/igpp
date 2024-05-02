@@ -1,9 +1,10 @@
 # Files to exclude from repo
-/*
+*/*
 *.txt
 *.jpg
 *.py
 *.db
+secrets_session.py
 # Files to include in repo
 !sample.txt
 !.gitignore
