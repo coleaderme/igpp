@@ -54,7 +54,7 @@ def save_csv(data: list[str]) -> None:
 
 
 # user_id from username
-def web_profile_info_api(username: str, client: httpx.Client) -> dict or None:
+def web_profile_info_api(username: str, client: httpx.Client) -> dict:
     print("[+] web_profile_info_api: " + username)
     params = {"username": username}
     r = client.get("https://www.instagram.com/api/v1/users/web_profile_info/", params=params)
@@ -62,11 +62,11 @@ def web_profile_info_api(username: str, client: httpx.Client) -> dict or None:
         return r.json()
     except:  # noqa
         print(f"[-] web_profile_info_api({username}) Not Exist / Logged out::", r.content[:60])
-        return
+        return {}
 
 
 # method 1 of getting hq pp
-def user_api(user_id: str, username: str, client: httpx.Client) -> str or None:
+def user_api(user_id: str, username: str, client: httpx.Client) -> str:
     """
     gets bunch of info {dict} about user
     we need hq pp url only
@@ -75,12 +75,12 @@ def user_api(user_id: str, username: str, client: httpx.Client) -> str or None:
     try:
         return client.get(f"https://www.instagram.com/api/v1/users/{user_id}/info/").json()["user"]["hd_profile_pic_url_info"]["url"]
     except:  # noqa
-        print(f"[-] user_api({user_id},{username})::", r.content[:60])
-    return
+        print(f"[-] user_api({user_id},{username})")
+    return ""
 
 
 # method 2 of getting hq pp: relies on graphql
-def user_info_graphql(user_id: str, username: str, client: httpx.Client) -> str or None:
+def user_info_graphql(user_id: str, username: str, client: httpx.Client) -> str:
     """
     return hq pp url OR None
     this response is just 1.2Kb
@@ -93,10 +93,10 @@ def user_info_graphql(user_id: str, username: str, client: httpx.Client) -> str 
         return client.post(url="https://www.instagram.com/api/graphql", headers=headers, data=data).json()["data"]["user"]["hd_profile_pic_url_info"]["url"]
     except:  # noqa
         print(f"[-] user_info_graphql({user_id}, {username}, client)")
-        return
+        return ""
 
 
-def query(query_term: str, client: httpx.Client) -> dict or None:
+def query(query_term: str, client: httpx.Client) -> dict:
     # 1. access value of key 'variables', loadS json String to dict.
     # 2. update value of key 'query'
     # 3. put dict back to json string.
@@ -110,7 +110,7 @@ def query(query_term: str, client: httpx.Client) -> dict or None:
         return r.json()["data"]["xdt_api__v1__fbsearch__topsearch_connection"]["users"]
     except:  # noqa
         print(f"[-] query({query}) Logged Out::", r.content[:60])
-        return
+        return {}
 
 
 def download(usernames: list[str], is_fast: bool = False, valid_input: bool = False) -> None:
