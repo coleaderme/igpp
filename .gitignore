@@ -5,6 +5,7 @@
 *.py
 *.db
 secrets_session.py
+gitbash.sh
 # Files to include in repo
 !sample.txt
 !.gitignore

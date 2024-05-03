@@ -3,6 +3,7 @@
 import httpx
 import argparse
 import secrets_session
+import time
 import json
 # import browser_cookie3
 
@@ -34,6 +35,12 @@ folder = "downloads_ig"  # default Folder where downloads are saved
 # def valid_instagram_username(username: str) -> bool:
 #     pattern = r"^(?!.*\.\.)(?!.*\.$)(?!.*\.\d$)(?!.*\.$)[^\W][\w.]{1,29}$"
 #     return bool(re.match(pattern, username))
+
+def holdup(seconds: int=2, hint: str=None)-> None:
+    while seconds:
+        print(f'Next {hint} in {seconds}s..')
+        time.sleep(1)
+        seconds -= 1
 
 
 def save(path: str, content: bytes) -> None:
@@ -132,11 +139,12 @@ def download(usernames: list[str], is_fast: bool = False) -> None:
                 url = user_api(user_id, username, client)
                 if url:
                     save(f"{folder}/{username}.jpg", client.get(url).content)
+                holdup(1,'download')
 
 
 # searching users relies on graphql, means it will break often.
 def search(ig_queries: list[str], count: int, is_fast: bool = False) -> None:
-    usernames = []  # BIG BIG usernames list
+    usernames_graphql = []  # BIG BIG usernames list
     with httpx.Client(cookies=cookies, headers=headers, timeout=10) as client:
         for ig_query in ig_queries:
             print(f"[+] Searching for `{ig_query}` please wait..")
@@ -148,12 +156,13 @@ def search(ig_queries: list[str], count: int, is_fast: bool = False) -> None:
                 for u in users:
                     name = u["user"]["username"]
                     # print(name)
-                    usernames.append(name)
-        # downloads all usernames[..] got from Search()
-        if not usernames:
+                    usernames_graphql.append(name)
+            holdup(5, 'query')
+        # downloads all usernames got from Search()
+        if not usernames_graphql:
             print(f"[-] failed to get usernames @search({ig_query})")
         else:
-            download(usernames, is_fast)
+            download(usernames_graphql, is_fast)
 
 
 def main() -> None:
