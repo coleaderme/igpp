@@ -12,9 +12,10 @@ gitbash.sh
 !__init__.py
 !curl_to_secrets.sh
 !database
-!downloads_ig
+!pics
 !igpp.py
 !LICENSE
 !README.md
 !requirements.txt
 !utils
+!advance_igpp.py
