@@ -24,19 +24,18 @@ Author: coleaderme
 License: MIT
 """
 
-# cookies = browser_cookie3.chromium(domain_name="instagram.com")  # cookies from browser!
 cookies = secrets_session.cookies
 headers = secrets_session.headers
-data = secrets_session.data
+data    = secrets_session.data
 
-folder = "downloads_ig"  # default Folder where downloads are saved
+folder  = "pics"  # default Folder where downloads are saved
 
 
 # def valid_instagram_username(username: str) -> bool:
 #     pattern = r"^(?!.*\.\.)(?!.*\.$)(?!.*\.\d$)(?!.*\.$)[^\W][\w.]{1,29}$"
 #     return bool(re.match(pattern, username))
 
-def holdup(seconds: int=2, hint: str=None)-> None:
+def holdup(seconds: int=2, hint: str='message')-> None:
     while seconds:
         print(f'Next {hint} in {seconds}s..')
         time.sleep(1)
@@ -160,7 +159,7 @@ def search(ig_queries: list[str], count: int, is_fast: bool = False) -> None:
             holdup(5, 'query')
         # downloads all usernames got from Search()
         if not usernames_graphql:
-            print(f"[-] failed to get usernames @search({ig_query})")
+            print("[-] failed to get usernames @search()")
         else:
             download(usernames_graphql, is_fast)
 
